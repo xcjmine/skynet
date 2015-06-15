@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-static bool 
+static bool
 sp_invalid(int kfd) {
 	return kfd == -1;
 }
@@ -25,7 +25,7 @@ sp_release(int kfd) {
 	close(kfd);
 }
 
-static void 
+static void
 sp_del(int kfd, int sock) {
 	struct kevent ke;
 	EV_SET(&ke, sock, EVFILT_READ, EV_DELETE, 0, 0, NULL);
@@ -34,7 +34,7 @@ sp_del(int kfd, int sock) {
 	kevent(kfd, &ke, 1, NULL, 0, NULL);
 }
 
-static int 
+static int
 sp_add(int kfd, int sock, void *ud) {
 	struct kevent ke;
 	EV_SET(&ke, sock, EVFILT_READ, EV_ADD, 0, 0, ud);
@@ -55,7 +55,7 @@ sp_add(int kfd, int sock, void *ud) {
 	return 0;
 }
 
-static void 
+static void
 sp_write(int kfd, int sock, void *ud, bool enable) {
 	struct kevent ke;
 	EV_SET(&ke, sock, EVFILT_WRITE, enable ? EV_ENABLE : EV_DISABLE, 0, 0, ud);
@@ -64,7 +64,7 @@ sp_write(int kfd, int sock, void *ud, bool enable) {
 	}
 }
 
-static int 
+static int
 sp_wait(int kfd, struct event *e, int max) {
 	struct kevent ev[max];
 	int n = kevent(kfd, NULL, 0, ev, max, NULL);
