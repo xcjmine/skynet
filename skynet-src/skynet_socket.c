@@ -13,7 +13,7 @@
 
 static struct socket_server * SOCKET_SERVER = NULL;
 
-void
+void 
 skynet_socket_init() {
 	SOCKET_SERVER = socket_server_create();
 }
@@ -33,7 +33,7 @@ skynet_socket_free() {
 static void
 forward_message(int type, bool padding, struct socket_message * result) {
 	struct skynet_socket_message *sm;
-	int sz = sizeof(*sm);
+	size_t sz = sizeof(*sm);
 	if (padding) {
 		if (result->data) {
 			sz += strlen(result->data);
@@ -56,8 +56,8 @@ forward_message(int type, bool padding, struct socket_message * result) {
 	message.source = 0;
 	message.session = 0;
 	message.data = sm;
-	message.sz = sz | PTYPE_SOCKET << HANDLE_REMOTE_SHIFT;
-
+	message.sz = sz | ((size_t)PTYPE_SOCKET << MESSAGE_TYPE_SHIFT);
+	
 	if (skynet_context_push((uint32_t)result->opaque, &message)) {
 		// todo: report somewhere to close socket
 		// don't call skynet_socket_close here (It will block mainloop)
@@ -66,7 +66,7 @@ forward_message(int type, bool padding, struct socket_message * result) {
 	}
 }
 
-int
+int 
 skynet_socket_poll() {
 	struct socket_server *ss = SOCKET_SERVER;
 	assert(ss);
@@ -109,10 +109,13 @@ check_wsz(struct skynet_context *ctx, int id, void *buffer, int64_t wsz) {
 	if (wsz < 0) {
 		return -1;
 	} else if (wsz > 1024 * 1024) {
-		int kb4 = wsz / 1024 / 4;
-		if (kb4 % 256 == 0) {
-			skynet_error(ctx, "%d Mb bytes on socket %d need to send out", (int)(wsz / (1024 * 1024)), id);
-		}
+		struct skynet_socket_message tmp;
+		tmp.type = SKYNET_SOCKET_TYPE_WARNING;
+		tmp.id = id;
+		tmp.ud = (int)(wsz / 1024);
+		tmp.buffer = NULL;
+		skynet_send(ctx, 0, skynet_context_handle(ctx), PTYPE_SOCKET, 0 , &tmp, sizeof(tmp));
+//		skynet_error(ctx, "%d Mb bytes on socket %d need to send out", (int)(wsz / (1024 * 1024)), id);
 	}
 	return 0;
 }
@@ -128,31 +131,31 @@ skynet_socket_send_lowpriority(struct skynet_context *ctx, int id, void *buffer,
 	socket_server_send_lowpriority(SOCKET_SERVER, id, buffer, sz);
 }
 
-int
+int 
 skynet_socket_listen(struct skynet_context *ctx, const char *host, int port, int backlog) {
 	uint32_t source = skynet_context_handle(ctx);
 	return socket_server_listen(SOCKET_SERVER, source, host, port, backlog);
 }
 
-int
+int 
 skynet_socket_connect(struct skynet_context *ctx, const char *host, int port) {
 	uint32_t source = skynet_context_handle(ctx);
 	return socket_server_connect(SOCKET_SERVER, source, host, port);
 }
 
-int
+int 
 skynet_socket_bind(struct skynet_context *ctx, int fd) {
 	uint32_t source = skynet_context_handle(ctx);
 	return socket_server_bind(SOCKET_SERVER, source, fd);
 }
 
-void
+void 
 skynet_socket_close(struct skynet_context *ctx, int id) {
 	uint32_t source = skynet_context_handle(ctx);
 	socket_server_close(SOCKET_SERVER, source, id);
 }
 
-void
+void 
 skynet_socket_start(struct skynet_context *ctx, int id) {
 	uint32_t source = skynet_context_handle(ctx);
 	socket_server_start(SOCKET_SERVER, source, id);
@@ -163,18 +166,18 @@ skynet_socket_nodelay(struct skynet_context *ctx, int id) {
 	socket_server_nodelay(SOCKET_SERVER, id);
 }
 
-int
+int 
 skynet_socket_udp(struct skynet_context *ctx, const char * addr, int port) {
 	uint32_t source = skynet_context_handle(ctx);
 	return socket_server_udp(SOCKET_SERVER, source, addr, port);
 }
 
-int
+int 
 skynet_socket_udp_connect(struct skynet_context *ctx, int id, const char * addr, int port) {
 	return socket_server_udp_connect(SOCKET_SERVER, id, addr, port);
 }
 
-int
+int 
 skynet_socket_udp_send(struct skynet_context *ctx, int id, const char * address, const void *buffer, int sz) {
 	int64_t wsz = socket_server_udp_send(SOCKET_SERVER, id, (const struct socket_udp_address *)address, buffer, sz);
 	return check_wsz(ctx, id, (void *)buffer, wsz);
