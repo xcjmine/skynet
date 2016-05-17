@@ -37,9 +37,9 @@ function dbgcmd.TASK()
 	skynet.ret(skynet.pack(task))
 end
 
-function dbgcmd.INFO()
+function dbgcmd.INFO(...)
 	if internal_info_func then
-		skynet.ret(skynet.pack(internal_info_func()))
+		skynet.ret(skynet.pack(internal_info_func(...)))
 	else
 		skynet.ret(skynet.pack(nil))
 	end
@@ -67,6 +67,14 @@ end
 
 function dbgcmd.SUPPORT(pname)
 	return skynet.ret(skynet.pack(skynet.dispatch(pname) ~= nil))
+end
+
+function dbgcmd.PING()
+	return skynet.ret()
+end
+
+function dbgcmd.LINK()
+	-- no return, raise error when exit
 end
 
 return dbgcmd
