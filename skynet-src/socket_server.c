@@ -1069,6 +1069,7 @@ close_socket(struct socket_server *ss, struct request_close *request, struct soc
 	struct socket_lock l;
 	socket_lock_init(s, &l);
 	if (!nomore_sending_data(s)) {
+		enable_read(ss,s,true);
 		int type = send_buffer(ss,s,&l,result);
 		// type : -1 or SOCKET_WARNING or SOCKET_CLOSE, SOCKET_WARNING means nomore_sending_data
 		if (type != -1 && type != SOCKET_WARNING)
@@ -1081,6 +1082,7 @@ close_socket(struct socket_server *ss, struct request_close *request, struct soc
 		return SOCKET_CLOSE;
 	}
 	s->type = SOCKET_TYPE_HALFCLOSE;
+	shutdown(s->fd, SHUT_RD);
 
 	return -1;
 }
@@ -2184,6 +2186,8 @@ query_info(struct socket *s, struct socket_info *si) {
 	si->rtime = s->stat.rtime;
 	si->wtime = s->stat.wtime;
 	si->wbuffer = s->wb_size;
+	si->reading = s->reading;
+	si->writing = s->writing;
 
 	return 1;
 }
