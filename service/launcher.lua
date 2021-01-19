@@ -32,9 +32,9 @@ local function list_srv(ti, fmt_func, ...)
 		sessions[r] = addr
 	end
 	for req, resp in req:select(ti) do
-		local stat = resp[1]
 		local addr = req[1]
 		if resp then
+			local stat = resp[1]
 			list[skynet.address(addr)] = fmt_func(stat, addr)
 		else
 			list[skynet.address(addr)] = fmt_func("ERROR", addr)
@@ -52,7 +52,6 @@ function command.STAT(addr, ti)
 end
 
 function command.KILL(_, handle)
-	handle = handle_to_address(handle)
 	skynet.kill(handle)
 	local ret = { [skynet.address(handle)] = tostring(services[handle]) }
 	services[handle] = nil
